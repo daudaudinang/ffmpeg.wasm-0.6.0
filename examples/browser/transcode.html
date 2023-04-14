@@ -1,0 +1,52 @@
+<html>
+
+<head>
+  <script src="/dist/ffmpeg.dev.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h3>Upload a video to transcode to mp4 (x264) and play!</h3>
+  <video id="output-video" controls></video><br />
+  <p id="message"></p>
+  <script>
+    const { createWorker } = FFmpeg;
+    const worker = createWorker({
+      corePath: '../../node_modules/@ffmpeg/core/ffmpeg-core.js',
+      logger: ({ message }) => console.log(message),
+      progress: p => console.log(p),
+    });
+
+    (async () => {
+      const message = document.getElementById('message');
+      const name = 'flame.avi';
+
+      message.innerHTML = 'Loading ffmpeg-core.js';
+      await worker.load();
+      await worker.write(name, 'http://localhost:3000/tests/assets/flame.avi');
+      message.innerHTML = 'Start transcoding';
+      await worker.transcode(name, 'output.mp4');
+      message.innerHTML = 'Complete transcoding';
+      const { data } = await worker.read('output.mp4');
+
+      const video = document.getElementById('output-video');
+      video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+      const elm = document.getElementById('uploader');
+    })();
+  </script>
+</body>
+
+</html>
